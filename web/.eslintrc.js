@@ -4,7 +4,7 @@ const path = require('path');
 const prettierOptions = JSON.parse(fs.readFileSync(path.resolve(__dirname, '.prettierrc'), 'utf8'));
 
 module.exports = {
-  extends: ['prettier', 'eslint:recommended'],
+  extends: ['react-app', 'eslint:recommended', 'prettier', 'prettier/react', 'prettier/@typescript-eslint'],
   plugins: ['prettier'],
   rules: {
     'prettier/prettier': ['error', prettierOptions],
