@@ -3,7 +3,7 @@ import { ThemeProvider, CSSReset, ColorModeProvider } from '@chakra-ui/core'
 import { Cache, cacheExchange, QueryInput } from '@urql/exchange-graphcache';
 import { Provider, createClient, dedupExchange, fetchExchange } from 'urql';
 import { __GRAPHQL_URL__ } from '../constants';
-import { LoginMutation, MeDocument, MeQuery, RegisterMutation } from '../generated/graphql';
+import { LoginMutation, LogoutMutation, MeDocument, MeQuery, RegisterMutation } from '../generated/graphql';
 import theme from '../theme'
 
 function updQuery<Result, Query>(
@@ -53,6 +53,14 @@ const client = createClient({
                 me: res.register.user,
               };
             }
+          );
+        },
+        logout: (result, _args, cache, _info) => {
+          updQuery<LogoutMutation, MeQuery>(
+            cache,
+            { query: MeDocument },
+            result,
+            () => ({ me: null }),
           );
         },
       },
