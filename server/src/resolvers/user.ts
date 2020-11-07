@@ -3,6 +3,7 @@ import argon2 from 'argon2';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { User } from "../entities/User";
 import { MyContext } from "../types";
+import { __COOKIE_NAME__ } from "../constants";
 
 @InputType()
 class UsernamePasswordInput {
@@ -24,10 +25,10 @@ class FieldError {
 
 @ObjectType()
 class UserResponse {
-  @Field(() => [FieldError], { nullable: true})
+  @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
 
-  @Field(() => User, { nullable: true})
+  @Field(() => User, { nullable: true })
   user?: User;
 }
 
@@ -48,7 +49,7 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async register(
-    @Arg('options', () => UsernamePasswordInput) options: UsernamePasswordInput,
+    @Arg('options') options: UsernamePasswordInput,
     @Ctx() { em, req }: MyContext,
   ): Promise<UserResponse> {
     if (!options.username) {
@@ -80,7 +81,7 @@ export class UserResolver {
           username: options.username.toLowerCase(),
           password: hashPass,
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         })
         .returning('*');
 
@@ -106,7 +107,7 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg('options', () => UsernamePasswordInput) options: UsernamePasswordInput,
+    @Arg('options') options: UsernamePasswordInput,
     @Ctx() { em, req }: MyContext,
   ): Promise<UserResponse> {
     const user = await em.findOne(User, {
@@ -137,5 +138,22 @@ export class UserResolver {
     return {
       user,
     };
+  }
+
+  @Mutation(() => Boolean)
+  logout(
+    @Ctx() {req, res }: MyContext
+  ) {
+    return new Promise(resolve => req.session.destroy(err => {
+      res.clearCookie(__COOKIE_NAME__);
+
+      if (err) {
+        console.log({err});
+        resolve(false);
+        return;
+      }
+
+      resolve(true);
+    }));
   }
 }

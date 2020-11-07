@@ -6,7 +6,7 @@ import { __GRAPHQL_URL__ } from '../constants';
 import { LoginMutation, MeDocument, MeQuery, RegisterMutation } from '../generated/graphql';
 import theme from '../theme'
 
-function updateQuery<Result, Query>(
+function updQuery<Result, Query>(
   cache: Cache,
   qi: QueryInput,
   result: any,
@@ -24,7 +24,7 @@ const client = createClient({
     updates: {
       Mutation: {
         login: (result, _args, cache, _info) => {
-          updateQuery<LoginMutation, MeQuery>(
+          updQuery<LoginMutation, MeQuery>(
             cache,
             { query: MeDocument },
             result,
@@ -40,7 +40,7 @@ const client = createClient({
           );
         },
         register: (result, _args, cache, _info) => {
-          updateQuery<RegisterMutation, MeQuery>(
+          updQuery<RegisterMutation, MeQuery>(
             cache,
             { query: MeDocument },
             result,

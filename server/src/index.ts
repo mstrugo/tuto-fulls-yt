@@ -1,4 +1,4 @@
-// import 'reflect-medatada';
+import 'reflect-metadata';
 import express from 'express';
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
@@ -7,7 +7,7 @@ import session from 'express-session';
 import connectRedis from 'connect-redis';
 import { MikroORM } from "@mikro-orm/core";
 import cors from 'cors';
-import { __FRONTEND_APP__, __PROD__ } from "./constants";
+import { __COOKIE_NAME__, __FRONTEND_APP__, __PROD__ } from "./constants";
 import config from './mikro-orm.config';
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
@@ -28,7 +28,7 @@ const main = async () => {
   }));
   app.use(
     session({
-      name: 'uid',
+      name: __COOKIE_NAME__,
       store: new RedisStore({
         client: redisClient,
         disableTouch: true,
@@ -43,7 +43,7 @@ const main = async () => {
       secret: 'cangrejitacangrejit',
       resave: false,
     })
-  )
+  );
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
