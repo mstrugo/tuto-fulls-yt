@@ -1,11 +1,15 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const fs = require('fs');
 const path = require('path');
 
-const prettierOptions = JSON.parse(fs.readFileSync(path.resolve(__dirname, '.prettierrc'), 'utf8'));
+const prettierOptions = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, '.prettierrc'), 'utf8'),
+);
 
 module.exports = {
-  extends: ['react-app', 'eslint:recommended', 'prettier', 'prettier/react', 'prettier/@typescript-eslint'],
-  plugins: ['prettier'],
+  parser: '@typescript-eslint/parser',
+  extends: ['prettier', 'prettier/react', 'prettier/@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'prettier'],
   rules: {
     'prettier/prettier': ['error', prettierOptions],
   },

@@ -1,6 +1,6 @@
 import React from 'react';
-import { ThemeProvider, CSSReset, ColorModeProvider } from '@chakra-ui/core'
-import theme from '../theme'
+import { ThemeProvider, CSSReset, ColorModeProvider } from '@chakra-ui/core';
+import theme from '../theme';
 
 const MyApp = ({ Component, pageProps }) => (
   <ThemeProvider theme={theme}>

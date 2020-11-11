@@ -1,13 +1,13 @@
-import React, { FC } from "react";
-import { Form, Formik } from "formik";
-import { Box, Button } from "@chakra-ui/core";
+import React, { FC } from 'react';
+import { Form, Formik } from 'formik';
+import { Box, Button } from '@chakra-ui/core';
 import { useRouter } from 'next/router';
-import { withUrqlClient } from "next-urql";
-import { createUrqlClient } from "utils/createUrqlClient";
-import Wrapper from "components/Wrapper";
-import InputField from "components/InputField";
-import { useLoginMutation } from "generated/graphql";
-import { toErrorMap } from "utils/errorMap";
+import { withUrqlClient } from 'next-urql';
+import Wrapper from 'components/Wrapper';
+import InputField from 'components/InputField';
+import { useLoginMutation } from 'generated/graphql';
+import { createUrqlClient } from 'utils/createUrqlClient';
+import { toErrorMap } from 'utils/errorMap';
 
 interface loginProps {}
 
@@ -31,18 +31,32 @@ const Login: FC<loginProps> = () => {
       >
         {({ isSubmitting }) => (
           <Form>
-            <InputField name="username" label="Username" placeholder="Username" />
+            <InputField
+              name="username"
+              label="Username"
+              placeholder="Username"
+            />
             <Box mt={4}>
-              <InputField name="password" label="Password" placeholder="Password" type="password" />
+              <InputField
+                name="password"
+                label="Password"
+                placeholder="Password"
+                type="password"
+              />
             </Box>
-            <Button mt={4} type="submit" variantColor="blue" isLoading={isSubmitting}>
+            <Button
+              mt={4}
+              type="submit"
+              variantColor="blue"
+              isLoading={isSubmitting}
+            >
               Login
             </Button>
           </Form>
         )}
       </Formik>
     </Wrapper>
-  )
+  );
 };
 
 export default withUrqlClient(createUrqlClient)(Login);

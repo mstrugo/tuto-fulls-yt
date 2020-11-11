@@ -1,13 +1,13 @@
-import React, { FC } from "react";
-import { Form, Formik } from "formik";
-import { Box, Button } from "@chakra-ui/core";
+import React, { FC } from 'react';
+import { Box, Button } from '@chakra-ui/core';
+import { Form, Formik } from 'formik';
+import { withUrqlClient } from 'next-urql';
 import { useRouter } from 'next/router';
-import Wrapper from "../components/Wrapper";
-import InputField from "../components/InputField";
-import { useRegisterMutation } from "../generated/graphql";
-import { toErrorMap } from "../utils/errorMap";
-import { withUrqlClient } from "next-urql";
-import { createUrqlClient } from "utils/createUrqlClient";
+import Wrapper from 'components/Wrapper';
+import InputField from 'components/InputField';
+import { useRegisterMutation } from 'generated/graphql';
+import { toErrorMap } from 'utils/errorMap';
+import { createUrqlClient } from 'utils/createUrqlClient';
 
 interface registerProps {}
 
@@ -31,16 +31,32 @@ const Register: FC<registerProps> = () => {
       >
         {({ isSubmitting }) => (
           <Form>
-            <InputField name="username" label="Username" placeholder="Username" />
+            <InputField
+              name="username"
+              label="Username"
+              placeholder="Username"
+            />
             <Box mt={4}>
-              <InputField name="password" label="Password" placeholder="Password" type="password" />
+              <InputField
+                name="password"
+                label="Password"
+                placeholder="Password"
+                type="password"
+              />
             </Box>
-            <Button mt={4} type="submit" variantColor="teal" isLoading={isSubmitting}>Register</Button>
+            <Button
+              mt={4}
+              type="submit"
+              variantColor="teal"
+              isLoading={isSubmitting}
+            >
+              Register
+            </Button>
           </Form>
         )}
       </Formik>
     </Wrapper>
-  )
+  );
 };
 
 export default withUrqlClient(createUrqlClient)(Register);

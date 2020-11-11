@@ -1,15 +1,21 @@
-import { dedupExchange, fetchExchange } from "urql";
+import { dedupExchange, fetchExchange } from 'urql';
 import { cacheExchange, Cache, QueryInput } from '@urql/exchange-graphcache';
-import { LoginMutation, MeQuery, MeDocument, RegisterMutation, LogoutMutation } from "generated/graphql";
-import { __GRAPHQL_URL__ } from "../constants";
+import {
+  LoginMutation,
+  MeQuery,
+  MeDocument,
+  RegisterMutation,
+  LogoutMutation,
+} from 'generated/graphql';
+import { __GRAPHQL_URL__ } from '../constants';
 
 function updQuery<Result, Query>(
   cache: Cache,
   qi: QueryInput,
   result: any,
-  fn: (r: Result, q: Query) => Query
+  fn: (r: Result, q: Query) => Query,
 ) {
-  return cache.updateQuery(qi, (data) => fn(result, data as any) as any );
+  return cache.updateQuery(qi, data => fn(result, data as any) as any);
 }
 
 export const createUrqlClient = (ssrExchange: any) => ({
@@ -35,7 +41,7 @@ export const createUrqlClient = (ssrExchange: any) => ({
                 return {
                   me: res.login.user,
                 };
-              }
+              },
             );
           },
           register: (result, _args, cache, _info) => {
@@ -51,7 +57,7 @@ export const createUrqlClient = (ssrExchange: any) => ({
                 return {
                   me: res.register.user,
                 };
-              }
+              },
             );
           },
           logout: (result, _args, cache, _info) => {
@@ -66,6 +72,6 @@ export const createUrqlClient = (ssrExchange: any) => ({
       },
     }),
     ssrExchange,
-    fetchExchange
+    fetchExchange,
   ],
 });
