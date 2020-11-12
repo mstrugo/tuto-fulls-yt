@@ -1,18 +1,19 @@
-import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import {
+  Arg,
+  Ctx,
+  Field,
+  Mutation,
+  ObjectType,
+  Query,
+  Resolver,
+} from 'type-graphql';
 import argon2 from 'argon2';
 import { EntityManager } from '@mikro-orm/postgresql';
-import { User } from "../entities/User";
-import { MyContext } from "../types";
-import { __COOKIE_NAME__ } from "../constants";
-
-@InputType()
-class UsernamePasswordInput {
-  @Field()
-  username: string;
-
-  @Field()
-  password: string;
-}
+import { User } from '../entities/User';
+import { MyContext } from '../types/context';
+import { __COOKIE_NAME__ } from '../constants';
+import { validateRegister } from '../utils/validations';
+import { UsernamePasswordInput } from '../types/UsernamePasswordInput';
 
 @ObjectType()
 class FieldError {
@@ -35,9 +36,7 @@ class UserResponse {
 @Resolver()
 export class UserResolver {
   @Query(() => User, { nullable: true })
-  async me(
-    @Ctx() { req, em }: MyContext
-  ) {
+  async me(@Ctx() { req, em }: MyContext) {
     // You are not logged in
     if (!req.session.userId) {
       return null;
@@ -52,25 +51,12 @@ export class UserResolver {
     @Arg('options') options: UsernamePasswordInput,
     @Ctx() { em, req }: MyContext,
   ): Promise<UserResponse> {
-    if (!options.username) {
-      return {
-        errors: [{
-          field: 'username',
-          message: "Username can't be blank",
-        }],
-      }
+    const errors = validateRegister(options);
+    if (!!errors) {
+      return { errors };
     }
 
-    if (!options.password) {
-      return {
-        errors: [{
-          field: 'password',
-          message: "Password can't be blank",
-        }],
-      }
-    }
-
-    const hashPass = await argon2.hash(options.password)
+    const hashPass = await argon2.hash(options.password);
     let user;
 
     try {
@@ -78,6 +64,7 @@ export class UserResolver {
         .createQueryBuilder(User)
         .getKnexQuery()
         .insert({
+          email: options.email.toLowerCase(),
           username: options.username.toLowerCase(),
           password: hashPass,
           created_at: new Date(),
@@ -87,15 +74,17 @@ export class UserResolver {
 
       user = result[0];
     } catch (error) {
-      console.log({error});
+      console.log({ error });
       if (error.code === '23505' || error.details.includes('already exists')) {
         // Duplicated user
         return {
-          errors: [{
-            field: 'username',
-            message: 'Username already taken.'
-          }]
-        }
+          errors: [
+            {
+              field: 'username',
+              message: 'Username already taken.',
+            },
+          ],
+        };
       }
     }
 
@@ -107,30 +96,36 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg('options') options: UsernamePasswordInput,
+    @Arg('usernameOrEmail') usernameOrEmail: string,
+    @Arg('password') password: string,
     @Ctx() { em, req }: MyContext,
   ): Promise<UserResponse> {
+    const input = usernameOrEmail.includes('@') ? 'email' : 'username';
     const user = await em.findOne(User, {
-      username: options.username.toLowerCase()
+      [input]: usernameOrEmail.toLowerCase(),
     });
 
     if (!user) {
       return {
-        errors: [{
-          field: 'username',
-          message: "That username doesn't exist",
-        }],
-      }
+        errors: [
+          {
+            field: 'usernameOrEmail',
+            message: "That user doesn't exist",
+          },
+        ],
+      };
     }
 
-    const valid = await argon2.verify(user.password, options.password);
+    const valid = await argon2.verify(user.password, password);
     if (!valid) {
       return {
-        errors: [{
-          field: 'password',
-          message: "Incorrect password",
-        }],
-      }
+        errors: [
+          {
+            field: 'password',
+            message: 'Incorrect password',
+          },
+        ],
+      };
     }
 
     req.session.userId = user.id;
@@ -141,19 +136,27 @@ export class UserResolver {
   }
 
   @Mutation(() => Boolean)
-  logout(
-    @Ctx() {req, res }: MyContext
-  ) {
-    return new Promise(resolve => req.session.destroy(err => {
-      res.clearCookie(__COOKIE_NAME__);
+  async forgotPassword(@Arg('email') email: string, @Ctx() { em }: MyContext) {
+    const user = await em.findOne(User, { email });
+    console.log(user);
 
-      if (err) {
-        console.log({err});
-        resolve(false);
-        return;
-      }
+    return true;
+  }
 
-      resolve(true);
-    }));
+  @Mutation(() => Boolean)
+  logout(@Ctx() { req, res }: MyContext) {
+    return new Promise(resolve =>
+      req.session.destroy(err => {
+        res.clearCookie(__COOKIE_NAME__);
+
+        if (err) {
+          console.log({ err });
+          resolve(false);
+          return;
+        }
+
+        resolve(true);
+      }),
+    );
   }
 }

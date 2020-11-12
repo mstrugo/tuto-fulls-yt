@@ -18,9 +18,9 @@ const Register: FC<registerProps> = () => {
   return (
     <Wrapper variant="small">
       <Formik
-        initialValues={{ username: '', password: '' }}
+        initialValues={{ email: '', username: '', password: '' }}
         onSubmit={async (vals, { setErrors }) => {
-          const res = await register(vals);
+          const res = await register({ options: vals });
 
           if (res.data?.register.errors) {
             setErrors(toErrorMap(res.data.register.errors));
@@ -32,10 +32,18 @@ const Register: FC<registerProps> = () => {
         {({ isSubmitting }) => (
           <Form>
             <InputField
-              name="username"
-              label="Username"
-              placeholder="Username"
+              name="email"
+              label="Email"
+              placeholder="Email"
+              type="email"
             />
+            <Box mt={4}>
+              <InputField
+                name="username"
+                label="Username"
+                placeholder="Username"
+              />
+            </Box>
             <Box mt={4}>
               <InputField
                 name="password"
