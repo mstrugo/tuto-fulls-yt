@@ -9,10 +9,12 @@ import {
 } from 'type-graphql';
 import argon2 from 'argon2';
 import { EntityManager } from '@mikro-orm/postgresql';
+import { v4 as uuid4 } from 'uuid';
 import { User } from '../entities/User';
 import { MyContext } from '../types/context';
-import { __COOKIE_NAME__ } from '../constants';
+import { __COOKIE_NAME__, ___FORGET_PREFIX__ } from '../constants';
 import { validateRegister } from '../utils/validations';
+import { sendEmail } from '../utils/sendEmail';
 import { UsernamePasswordInput } from '../types/UsernamePasswordInput';
 
 @ObjectType()
@@ -136,9 +138,29 @@ export class UserResolver {
   }
 
   @Mutation(() => Boolean)
-  async forgotPassword(@Arg('email') email: string, @Ctx() { em }: MyContext) {
+  async forgotPassword(
+    @Arg('email') email: string,
+    @Ctx() { em, redis }: MyContext,
+  ) {
     const user = await em.findOne(User, { email });
-    console.log(user);
+
+    if (!user) {
+      // Avoid return the error to the user
+      return true;
+    }
+
+    const token = uuid4();
+    await redis.set(
+      ___FORGET_PREFIX__ + token,
+      user.id,
+      'ex',
+      1000 * 3600 * 72,
+    ); // 3 days
+
+    await sendEmail(
+      email,
+      `<p>Change your password <a href="http://localhost:3000/change-passord/${token}">clicking here</a>`,
+    );
 
     return true;
   }
