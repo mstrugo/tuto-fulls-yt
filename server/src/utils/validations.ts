@@ -1,5 +1,18 @@
 import { UsernamePasswordInput } from '../types/UsernamePasswordInput';
 
+export const validateEmptyPassword = (field: string, value: string) => {
+  if (!value) {
+    return [
+      {
+        field,
+        message: "Password can't be blank",
+      },
+    ];
+  }
+
+  return null;
+};
+
 export const validateRegister = (options: UsernamePasswordInput) => {
   if (!options.email || !options.email.includes('@')) {
     return [
@@ -19,13 +32,9 @@ export const validateRegister = (options: UsernamePasswordInput) => {
     ];
   }
 
-  if (!options.password) {
-    return [
-      {
-        field: 'password',
-        message: "Password can't be blank",
-      },
-    ];
+  const invalidPass = validateEmptyPassword('password', options.password);
+  if (!!invalidPass) {
+    return invalidPass;
   }
 
   return null;

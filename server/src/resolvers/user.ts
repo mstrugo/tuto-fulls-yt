@@ -12,8 +12,12 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { v4 as uuid4 } from 'uuid';
 import { User } from '../entities/User';
 import { MyContext } from '../types/context';
-import { __COOKIE_NAME__, ___FORGET_PREFIX__ } from '../constants';
-import { validateRegister } from '../utils/validations';
+import {
+  __COOKIE_NAME__,
+  __FRONTEND_RECOVERY_PSW__,
+  ___FORGET_PREFIX__,
+} from '../constants';
+import { validateEmptyPassword, validateRegister } from '../utils/validations';
 import { sendEmail } from '../utils/sendEmail';
 import { UsernamePasswordInput } from '../types/UsernamePasswordInput';
 
@@ -159,10 +163,61 @@ export class UserResolver {
 
     await sendEmail(
       email,
-      `<p>Change your password <a href="http://localhost:3000/change-passord/${token}">clicking here</a>`,
+      `<p>Change your password <a href="${__FRONTEND_RECOVERY_PSW__}/${token}">clicking here</a>`,
     );
 
     return true;
+  }
+
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg('newPassword') newPassword: string,
+    @Arg('token') token: string,
+    @Ctx() { em, redis, req }: MyContext,
+  ): Promise<UserResponse> {
+    const invalidPassword = validateEmptyPassword('newPassword', newPassword);
+    if (!!invalidPassword) {
+      return {
+        errors: {
+          ...invalidPassword,
+        },
+      };
+    }
+
+    const userId = await redis.get(___FORGET_PREFIX__ + token);
+    if (!userId) {
+      return {
+        errors: [
+          {
+            field: 'token',
+            message: 'Invalid or expired token.',
+          },
+        ],
+      };
+    }
+
+    const user = await em.findOne(User, { id: parseInt(userId) });
+    if (!user) {
+      return {
+        errors: [
+          {
+            field: 'token',
+            message: 'User not available',
+          },
+        ],
+      };
+    }
+
+    const hashPass = await argon2.hash(newPassword);
+    user.password = hashPass;
+
+    await em.persistAndFlush(user);
+    await redis.del(___FORGET_PREFIX__ + token);
+
+    // Login user automatically after change password
+    req.session.userId = user.id;
+
+    return { user };
   }
 
   @Mutation(() => Boolean)
