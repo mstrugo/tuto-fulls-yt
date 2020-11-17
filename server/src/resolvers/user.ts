@@ -8,7 +8,7 @@ import {
   Resolver,
 } from 'type-graphql';
 import argon2 from 'argon2';
-import { EntityManager } from '@mikro-orm/postgresql';
+import { getConnection } from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
 import { User } from '../entities/User';
 import { MyContext } from '../types/context';
@@ -42,20 +42,19 @@ class UserResponse {
 @Resolver()
 export class UserResolver {
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { req, em }: MyContext) {
+  me(@Ctx() { req }: MyContext) {
     // You are not logged in
     if (!req.session.userId) {
       return null;
     }
 
-    const user = await em.findOne(User, { id: req.session.userId });
-    return user;
+    return User.findOne(req.session.userId); // .findOne({ where: { id: req.session.userId }})
   }
 
   @Mutation(() => UserResponse)
   async register(
     @Arg('options') options: UsernamePasswordInput,
-    @Ctx() { em, req }: MyContext,
+    @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
     const errors = validateRegister(options);
     if (!!errors) {
@@ -66,22 +65,34 @@ export class UserResolver {
     let user;
 
     try {
-      const result = await (em as EntityManager)
-        .createQueryBuilder(User)
-        .getKnexQuery()
-        .insert({
+      // Using create()
+      // const result = await User.create({
+      //   email: options.email.toLowerCase(),
+      //     username: options.username.toLowerCase(),
+      //     password: hashPass,
+      // }).save();
+
+      // Using createQueryBuilder()
+      const result = await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
           email: options.email.toLowerCase(),
           username: options.username.toLowerCase(),
           password: hashPass,
-          created_at: new Date(),
-          updated_at: new Date(),
         })
-        .returning('*');
+        .returning('*')
+        .execute();
 
-      user = result[0];
+      user = result.raw[0];
     } catch (error) {
       console.log({ error });
-      if (error.code === '23505' || error.details.includes('already exists')) {
+      if (
+        error.code === '23505' ||
+        error.details.includes('already exists') ||
+        error.details.includes('ya existe')
+      ) {
         // Duplicated user
         return {
           errors: [
@@ -104,11 +115,13 @@ export class UserResolver {
   async login(
     @Arg('usernameOrEmail') usernameOrEmail: string,
     @Arg('password') password: string,
-    @Ctx() { em, req }: MyContext,
+    @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
     const input = usernameOrEmail.includes('@') ? 'email' : 'username';
-    const user = await em.findOne(User, {
-      [input]: usernameOrEmail.toLowerCase(),
+    const user = await User.findOne({
+      where: {
+        [input]: usernameOrEmail.toLowerCase(),
+      },
     });
 
     if (!user) {
@@ -144,9 +157,9 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg('email') email: string,
-    @Ctx() { em, redis }: MyContext,
+    @Ctx() { redis }: MyContext,
   ) {
-    const user = await em.findOne(User, { email });
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
       // Avoid return the error to the user
@@ -173,7 +186,7 @@ export class UserResolver {
   async changePassword(
     @Arg('newPassword') newPassword: string,
     @Arg('token') token: string,
-    @Ctx() { em, redis, req }: MyContext,
+    @Ctx() { redis, req }: MyContext,
   ): Promise<UserResponse> {
     const invalidPassword = validateEmptyPassword('newPassword', newPassword);
     if (!!invalidPassword) {
@@ -184,7 +197,8 @@ export class UserResolver {
       };
     }
 
-    const userId = await redis.get(___FORGET_PREFIX__ + token);
+    const redisKey = ___FORGET_PREFIX__ + token;
+    const userId = await redis.get(redisKey);
     if (!userId) {
       return {
         errors: [
@@ -196,7 +210,8 @@ export class UserResolver {
       };
     }
 
-    const user = await em.findOne(User, { id: parseInt(userId) });
+    const uID = parseInt(userId);
+    const user = await User.findOne(uID);
     if (!user) {
       return {
         errors: [
@@ -209,10 +224,9 @@ export class UserResolver {
     }
 
     const hashPass = await argon2.hash(newPassword);
-    user.password = hashPass;
 
-    await em.persistAndFlush(user);
-    await redis.del(___FORGET_PREFIX__ + token);
+    await User.update({ id: uID }, { password: hashPass });
+    await redis.del(redisKey);
 
     // Login user automatically after change password
     req.session.userId = user.id;
