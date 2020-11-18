@@ -12,9 +12,11 @@ import { typeormConfig } from './typeorm.config';
 import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
+// import { Post } from './entities/Post';
 
 const main = async () => {
   const conn = await createConnection(typeormConfig);
+  // Post.delete({});
 
   const app = express();
 
