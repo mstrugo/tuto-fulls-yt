@@ -7,11 +7,12 @@ import Layout from 'components/Layout';
 import InputField from 'components/InputField';
 import { useCreatePostMutation } from 'generated/graphql';
 import { createUrqlClient } from 'utils/createUrqlClient';
-import { toErrorMap } from 'utils/errorMap';
+import { useIsAuth } from 'utils/useIsAuth';
 
 interface createPostProps {}
 
 const CreatePost: FC<createPostProps> = () => {
+  useIsAuth();
   const router = useRouter();
   const [, createPost] = useCreatePostMutation();
 
@@ -21,9 +22,9 @@ const CreatePost: FC<createPostProps> = () => {
         initialValues={{ title: '', text: '' }}
         onSubmit={async vals => {
           const res = await createPost({ input: vals });
-          const destiny = !!res.error ? '/login' : '/';
-
-          router.push(destiny);
+          if (!res.error) {
+            router.push('/');
+          }
         }}
       >
         {({ isSubmitting }) => (
