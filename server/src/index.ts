@@ -17,6 +17,7 @@ import { UserResolver } from './resolvers/user';
 const main = async () => {
   const conn = await createConnection(typeormConfig);
   // Post.delete({});
+  // await conn.runMigrations();
 
   const app = express();
 

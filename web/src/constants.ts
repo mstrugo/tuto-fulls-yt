@@ -6,4 +6,5 @@ export const __GRAPHQL_URL__ = `${__BACKEND_APP__}/graphql`;
 export const __INTERNAL_URL__ = {
   login: '/login',
   register: '/register',
+  createPost: '/create-post',
 };

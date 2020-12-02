@@ -37,6 +37,11 @@ export const NavBar: FC<NavBarProps> = () => {
     // user is logged in
     body = (
       <Flex>
+        <NextLink href={__INTERNAL_URL__.createPost}>
+          <Link mr={10} color="white">
+            Create Post
+          </Link>
+        </NextLink>
         <Box mr={2}>{data?.me.username}</Box>
         <Button onClick={() => logout()} isLoading={isLogginOut}>
           Logout

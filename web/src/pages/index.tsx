@@ -1,18 +1,49 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { withUrqlClient } from 'next-urql';
-import { createUrqlClient } from 'utils/createUrqlClient';
+import { Button, Flex, Stack } from '@chakra-ui/core';
 import Layout from 'components/Layout';
+import { Post } from 'components/Post';
 import { usePostsQuery } from 'generated/graphql';
+import { createUrqlClient } from 'utils/createUrqlClient';
 
 const Index = () => {
-  const [{ data }] = usePostsQuery();
+  const [variables, setVariables] = useState({ limit: 10, cursor: '' });
+  const [{ data, fetching }] = usePostsQuery({ variables });
+
+  const loadMoreHandler = () =>
+    setVariables({
+      ...variables,
+      cursor: data!.posts.posts[data!.posts.posts.length - 1].createdAt,
+    });
 
   return (
     <Layout>
-      {!!data ? (
-        data.posts.map(p => <div key={p.id}>{p.title}</div>)
-      ) : (
+      {!data && fetching ? (
         <div>Loading...</div>
+      ) : (
+        <Stack spacing={8}>
+          {!!data?.posts?.posts?.length ? (
+            <>
+              {data.posts.posts.map(p => (
+                <Post key={p.id} data={p} />
+              ))}
+              {!!data.posts.hasMore && (
+                <Flex>
+                  <Button
+                    onClick={loadMoreHandler}
+                    isLoading={fetching}
+                    m="auto"
+                    my={4}
+                  >
+                    Load more
+                  </Button>
+                </Flex>
+              )}
+            </>
+          ) : (
+            <div>No posts! Create a new one!</div>
+          )}
+        </Stack>
       )}
     </Layout>
   );
