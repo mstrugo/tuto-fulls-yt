@@ -6,8 +6,16 @@ import { Post } from 'components/Post';
 import { usePostsQuery } from 'generated/graphql';
 import { createUrqlClient } from 'utils/createUrqlClient';
 
+interface IVariables {
+  limit: number;
+  cursor: null | string;
+}
+
 const Index = () => {
-  const [variables, setVariables] = useState({ limit: 10, cursor: '' });
+  const [variables, setVariables] = useState<IVariables>({
+    limit: 10,
+    cursor: null,
+  });
   const [{ data, fetching }] = usePostsQuery({ variables });
 
   const loadMoreHandler = () =>

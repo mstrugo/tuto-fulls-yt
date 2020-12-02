@@ -2,15 +2,17 @@ import {
   Arg,
   Ctx,
   Field,
+  FieldResolver,
   Mutation,
   ObjectType,
   Query,
   Resolver,
+  Root,
 } from 'type-graphql';
 import argon2 from 'argon2';
 import { getConnection } from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
-import { User } from '../entities/User';
+import { User } from '../entities';
 import { MyContext } from '../types/context';
 import {
   __COOKIE_NAME__,
@@ -39,8 +41,18 @@ class UserResponse {
   user?: User;
 }
 
-@Resolver()
+@Resolver(User)
 export class UserResolver {
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: MyContext) {
+    // this is the current user and its ok to show them their own email
+    if (req.session.userId === user.id) {
+      return user.email;
+    }
+    // Prevent showing private data
+    return '';
+  }
+
   @Query(() => User, { nullable: true })
   me(@Ctx() { req }: MyContext) {
     // You are not logged in

@@ -46,6 +46,7 @@ export type Post = {
   text: Scalars['String'];
   points: Scalars['Float'];
   creatorId: Scalars['Float'];
+  creator: User;
   textSnippet: Scalars['String'];
 };
 
@@ -63,6 +64,7 @@ export type Mutation = {
   createPost: Post;
   updatePost?: Maybe<Post>;
   deletePost: Scalars['Boolean'];
+  vote: Scalars['Boolean'];
   register: UserResponse;
   login: UserResponse;
   forgotPassword: Scalars['Boolean'];
@@ -81,6 +83,11 @@ export type MutationUpdatePostArgs = {
 
 export type MutationDeletePostArgs = {
   id: Scalars['Float'];
+};
+
+export type MutationVoteArgs = {
+  value: Scalars['Int'];
+  postId: Scalars['Int'];
 };
 
 export type MutationRegisterArgs = {
@@ -208,14 +215,8 @@ export type PostsQuery = { __typename?: 'Query' } & {
       posts: Array<
         { __typename?: 'Post' } & Pick<
           Post,
-          | 'createdAt'
-          | 'creatorId'
-          | 'id'
-          | 'points'
-          | 'title'
-          | 'textSnippet'
-          | 'updatedAt'
-        >
+          'createdAt' | 'id' | 'points' | 'title' | 'textSnippet' | 'updatedAt'
+        > & { creator: { __typename?: 'User' } & Pick<User, 'id' | 'username'> }
       >;
     };
 };
@@ -347,12 +348,15 @@ export const PostsDocument = gql`
       hasMore
       posts {
         createdAt
-        creatorId
         id
         points
         title
         textSnippet
         updatedAt
+        creator {
+          id
+          username
+        }
       }
     }
   }

@@ -6,3 +6,5 @@ export const __FRONTEND_RECOVERY_PSW__ = `${__FRONTEND_APP__}/change-password`;
 export const __COOKIE_NAME__ = 'uid';
 
 export const ___FORGET_PREFIX__ = 'forget-psw:';
+
+export const __POST_LENGTH__ = 50;

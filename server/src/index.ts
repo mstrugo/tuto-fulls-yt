@@ -12,7 +12,7 @@ import { typeormConfig } from './typeorm.config';
 import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
-// import { Post } from './entities/Post';
+// import { Post } from './entities';
 
 const main = async () => {
   const conn = await createConnection(typeormConfig);

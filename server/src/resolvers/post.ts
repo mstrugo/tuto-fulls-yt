@@ -1,5 +1,4 @@
-import { isAuth } from '../middleware/isAuth';
-import { MyContext } from 'src/types/context';
+import { getConnection } from 'typeorm';
 import {
   Arg,
   Ctx,
@@ -14,8 +13,11 @@ import {
   Root,
   UseMiddleware,
 } from 'type-graphql';
-import { Post } from '../entities/Post';
-import { getConnection } from 'typeorm';
+import { isAuth } from '../middleware/isAuth';
+import { MyContext } from '../types/context';
+import { Post, Updoot } from '../entities';
+import { postsSQLQuery, voteSQLQuery } from '../sql';
+import { __POST_LENGTH__ } from '../constants';
 
 @InputType()
 class PostInput {
@@ -29,7 +31,8 @@ class PostInput {
 @ObjectType()
 class PaginatedPosts {
   @Field(() => [Post])
-  posts: Post[]
+  posts: Post[];
+
   @Field()
   hasMore: boolean;
 }
@@ -38,7 +41,11 @@ class PaginatedPosts {
 export class PostResolver {
   @FieldResolver(() => String)
   textSnippet(@Root() root: Post) {
-    return root.text.slice(0, 47).concat('...');
+    if (root.text.length > __POST_LENGTH__) {
+      return root.text.slice(0, __POST_LENGTH__ - 3).concat('...');
+    }
+
+    return root.text;
   }
 
   @Query(() => PaginatedPosts)
@@ -48,19 +55,32 @@ export class PostResolver {
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
     const moreThanLimit = realLimit + 1;
-    const query = getConnection()
-      .getRepository(Post)
-      .createQueryBuilder('p')
-      .orderBy('"createdAt"', 'DESC')
-      .take(moreThanLimit);
+
+    const replacements: any[] = [moreThanLimit];
 
     if (!!cursor) {
-      query.where('"createdAt" < :cursor', {
-        cursor: new Date(parseInt(cursor)),
-      });
+      replacements.push(new Date(parseInt(cursor)));
     }
 
-    const posts = await query.getMany();
+    const posts = await getConnection().query(
+      postsSQLQuery(!!cursor),
+      replacements,
+    );
+
+    // const query = getConnection()
+    //   .getRepository(Post)
+    //   .createQueryBuilder('p')
+    //   .innerJoinAndSelect('p.creator', 'creator', 'creator.id = p."creatorId"')
+    //   .orderBy('p."createdAt"', 'DESC')
+    //   .take(moreThanLimit);
+
+    // if (!!cursor) {
+    //   query.where('p."createdAt" < :cursor', {
+    //     cursor: new Date(parseInt(cursor)),
+    //   });
+    // }
+
+    // const posts = await query.getMany();
 
     return {
       posts: posts.slice(0, realLimit),
@@ -106,6 +126,22 @@ export class PostResolver {
   @Mutation(() => Boolean)
   async deletePost(@Arg('id') id: number): Promise<boolean> {
     await Post.delete(id);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async vote(
+    @Arg('postId', () => Int) postId: number,
+    @Arg('value', () => Int) value: number,
+    @Ctx() { req }: MyContext,
+  ) {
+    const { userId } = req.session;
+    const isUpdoot = value !== -1;
+    const realValue = isUpdoot ? 1 : -1;
+
+    await getConnection().query(voteSQLQuery(userId, postId, realValue));
+
     return true;
   }
 }

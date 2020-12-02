@@ -1,11 +1,10 @@
 import { ConnectionOptions } from 'typeorm';
 import path from 'path';
 import { __PROD__ } from './constants';
-import { Post } from './entities/Post';
-import { User } from './entities/User';
+import { Post, User, Updoot } from './entities';
 
 export const typeormConfig: ConnectionOptions = {
-  entities: [Post, User],
+  entities: [Post, User, Updoot],
   database: 'lireddit2',
   type: 'postgres',
   logging: !__PROD__,
