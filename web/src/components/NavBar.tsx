@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { Box, Button, Flex, Link, Spinner } from '@chakra-ui/core';
+import { Box, Button, Flex, Heading, Link, Spinner } from '@chakra-ui/core';
 import NextLink from 'next/link';
 import { __INTERNAL_URL__ } from '../constants';
 import { useLogoutMutation, useMeQuery } from 'generated/graphql';
@@ -36,7 +36,7 @@ export const NavBar: FC<NavBarProps> = () => {
   } else {
     // user is logged in
     body = (
-      <Flex>
+      <Flex align="center">
         <NextLink href={__INTERNAL_URL__.createPost}>
           <Link mr={10} color="white">
             Create Post
@@ -51,7 +51,12 @@ export const NavBar: FC<NavBarProps> = () => {
   }
 
   return (
-    <Flex bg="tomato" p={4}>
+    <Flex bg="tomato" p={4} position="sticky" zIndex={1}>
+      <NextLink href={__INTERNAL_URL__.home}>
+        <Link>
+          <Heading>LiReddit</Heading>
+        </Link>
+      </NextLink>
       <Box ml="auto">{body}</Box>
     </Flex>
   );

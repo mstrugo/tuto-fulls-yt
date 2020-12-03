@@ -32,9 +32,11 @@ const Index = () => {
         <Stack spacing={8}>
           {!!data?.posts?.posts?.length ? (
             <>
-              {data.posts.posts.map((p: PostSnippetFragment) => (
-                <Post key={p.id} data={p} />
-              ))}
+              {data.posts.posts
+                .filter(post => post)
+                .map((p: PostSnippetFragment) => (
+                  <Post key={p.id} data={p} />
+                ))}
               {!!data.posts.hasMore && (
                 <Flex>
                   <Button

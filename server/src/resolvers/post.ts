@@ -16,7 +16,12 @@ import {
 import { isAuth } from '../middleware/isAuth';
 import { MyContext } from '../types/context';
 import { Post, Updoot } from '../entities';
-import { postsSQLQuery, updatePostPointsSQLQuery, updateVoteSQLQuery, voteSQLQuery } from '../sql';
+import {
+  postsSQLQuery,
+  updatePostPointsSQLQuery,
+  updateVoteSQLQuery,
+  voteSQLQuery,
+} from '../sql';
 import { __POST_LENGTH__ } from '../constants';
 
 @InputType()
@@ -52,20 +57,19 @@ export class PostResolver {
   async posts(
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor: string | null,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<PaginatedPosts> {
+    const { userId } = req.session;
     const realLimit = Math.min(50, limit);
     const moreThanLimit = realLimit + 1;
 
-    const replacements: any[] = [moreThanLimit, req.session.userId];
-
+    let cursorVal = null;
     if (!!cursor) {
-      replacements.push(new Date(parseInt(cursor)));
+      cursorVal = new Date(parseInt(cursor)).toLocaleString();
     }
 
     const posts = await getConnection().query(
-      postsSQLQuery(!!cursor, !!req.session.userId),
-      replacements,
+      postsSQLQuery(moreThanLimit, cursorVal, userId),
     );
 
     // const query = getConnection()
@@ -90,8 +94,8 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  post(@Arg('id') id: number): Promise<Post | undefined> {
-    return Post.findOne(id);
+  post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
+    return Post.findOne(id, { relations: ['creator'] });
   }
 
   @Mutation(() => Post)
@@ -125,8 +129,27 @@ export class PostResolver {
   }
 
   @Mutation(() => Boolean)
-  async deletePost(@Arg('id') id: number): Promise<boolean> {
-    await Post.delete(id);
+  @UseMiddleware(isAuth)
+  async deletePost(
+    @Arg('id', () => Int) id: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<boolean> {
+    // Not cascade way
+    // const post = await Post.findOne(id);
+    // if (!post) {
+    //   return false;
+    // }
+
+    // if (post.creatorId !== req.session.userId) {
+    //   throw new Error('Not authorized');
+    // }
+
+    // await Updoot.delete({ postId: id });
+    // await Post.delete({ id });
+
+    // Cascade version
+    await Post.delete({ id, creatorId: req.session.userId });
+
     return true;
   }
 

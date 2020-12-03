@@ -19,9 +19,11 @@ import {
   RegisterMutation,
   LogoutMutation,
   VoteMutationVariables,
+  DeletePostMutationVariables,
 } from 'generated/graphql';
 import { pipe, tap } from 'wonka';
 import { __GRAPHQL_URL__ } from '../constants';
+import { isSSR } from './isSSR';
 
 const errorExchange: Exchange = ({ forward }) => ops$ => {
   return pipe(
@@ -83,10 +85,11 @@ function updQuery<Result, Query>(
   return cache.updateQuery(qi, data => fn(result, data as any) as any);
 }
 
-export const createUrqlClient = (ssrExchange: any) => ({
+export const createUrqlClient = (ssrExchange: any, ctx: any) => ({
   url: __GRAPHQL_URL__,
   fetchOptions: {
     credentials: 'include' as const,
+    headers: isSSR() ? { cookie: ctx.req.headers.cookie } : undefined,
   },
   exchanges: [
     dedupExchange,
@@ -186,6 +189,12 @@ export const createUrqlClient = (ssrExchange: any) => ({
                 },
               );
             }
+          },
+          deletePost: (_result, args, cache, _info) => {
+            cache.invalidate({
+              __typename: 'Post',
+              id: (args as DeletePostMutationVariables).id,
+            });
           },
         },
       },

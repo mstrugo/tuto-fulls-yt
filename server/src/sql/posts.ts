@@ -1,4 +1,4 @@
-export const postsSQLQuery = (cursor: boolean, loggedIn: boolean) =>
+export const postsSQLQuery = (limit: number, cursor: any, userId: number) =>
   `
     select p.*,
     json_build_object(
@@ -9,15 +9,15 @@ export const postsSQLQuery = (cursor: boolean, loggedIn: boolean) =>
       'updatedAt', u."updatedAt"
       ) creator,
     ${
-      loggedIn
-        ? '(select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"'
+      !!userId
+        ? `(select value from updoot where "userId" = ${userId} and "postId" = p.id) "voteStatus"`
         : 'null as "voteStatus"'
     }
     from post p
     inner join public.user u on u.id = p."creatorId"
-    ${cursor ? `where p."createdAt" < $3` : ''}
+    ${!!cursor ? `where p."createdAt" < '${cursor}'` : ''}
     order by p."createdAt" DESC
-    limit $1
+    limit ${limit}
   `;
 
 export const updatePostPointsSQLQuery = (postId: number, value: number) =>
