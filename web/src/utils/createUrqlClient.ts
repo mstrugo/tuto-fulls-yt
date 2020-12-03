@@ -11,12 +11,14 @@ import {
   QueryInput,
   Resolver,
 } from '@urql/exchange-graphcache';
+import gql from 'graphql-tag';
 import {
   LoginMutation,
   MeQuery,
   MeDocument,
   RegisterMutation,
   LogoutMutation,
+  VoteMutationVariables,
 } from 'generated/graphql';
 import { pipe, tap } from 'wonka';
 import { __GRAPHQL_URL__ } from '../constants';
@@ -141,11 +143,49 @@ export const createUrqlClient = (ssrExchange: any) => ({
           },
           createPost: (_result, _args, cache, _info) => {
             const allFields = cache.inspectFields('Query');
-            const fieldInfos = allFields.filter(info => info.fieldName === 'posts');
+            const fieldInfos = allFields.filter(
+              info => info.fieldName === 'posts',
+            );
 
             fieldInfos.forEach(fi => {
               cache.invalidate('Query', 'posts', fi.arguments || {});
             });
+          },
+          vote: (_result, args, cache, _info) => {
+            const { postId, value } = args as VoteMutationVariables;
+            const data: any = cache.readFragment(
+              gql`
+                fragment _ on Post {
+                  id
+                  points
+                  voteStatus
+                }
+              `,
+              { id: postId },
+            );
+
+            if (!!data) {
+              if (data.voteStatus === value) {
+                return;
+              }
+
+              const multiplier = data.voteStatus ? 2 : 1;
+              const newPoints = data.points + value * multiplier;
+
+              cache.writeFragment(
+                gql`
+                  fragment __ on Post {
+                    points
+                    voteStatus
+                  }
+                `,
+                {
+                  id: postId,
+                  points: newPoints,
+                  voteStatus: value,
+                },
+              );
+            }
           },
         },
       },

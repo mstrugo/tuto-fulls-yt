@@ -3,7 +3,7 @@ import { withUrqlClient } from 'next-urql';
 import { Button, Flex, Stack } from '@chakra-ui/core';
 import Layout from 'components/Layout';
 import { Post } from 'components/Post';
-import { usePostsQuery } from 'generated/graphql';
+import { PostSnippetFragment, usePostsQuery } from 'generated/graphql';
 import { createUrqlClient } from 'utils/createUrqlClient';
 
 interface IVariables {
@@ -32,7 +32,7 @@ const Index = () => {
         <Stack spacing={8}>
           {!!data?.posts?.posts?.length ? (
             <>
-              {data.posts.posts.map(p => (
+              {data.posts.posts.map((p: PostSnippetFragment) => (
                 <Post key={p.id} data={p} />
               ))}
               {!!data.posts.hasMore && (

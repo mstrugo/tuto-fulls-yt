@@ -16,7 +16,7 @@ import {
 import { isAuth } from '../middleware/isAuth';
 import { MyContext } from '../types/context';
 import { Post, Updoot } from '../entities';
-import { postsSQLQuery, voteSQLQuery } from '../sql';
+import { postsSQLQuery, updatePostPointsSQLQuery, updateVoteSQLQuery, voteSQLQuery } from '../sql';
 import { __POST_LENGTH__ } from '../constants';
 
 @InputType()
@@ -52,18 +52,19 @@ export class PostResolver {
   async posts(
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor: string | null,
+    @Ctx() { req }: MyContext
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
     const moreThanLimit = realLimit + 1;
 
-    const replacements: any[] = [moreThanLimit];
+    const replacements: any[] = [moreThanLimit, req.session.userId];
 
     if (!!cursor) {
       replacements.push(new Date(parseInt(cursor)));
     }
 
     const posts = await getConnection().query(
-      postsSQLQuery(!!cursor),
+      postsSQLQuery(!!cursor, !!req.session.userId),
       replacements,
     );
 
@@ -140,7 +141,24 @@ export class PostResolver {
     const isUpdoot = value !== -1;
     const realValue = isUpdoot ? 1 : -1;
 
-    await getConnection().query(voteSQLQuery(userId, postId, realValue));
+    const updoot = await Updoot.findOne({ where: { postId, userId } });
+
+    // The user has voted before
+    // and is changing their vote
+    if (!!updoot && updoot.value !== realValue) {
+      await getConnection().transaction(async trans => {
+        await trans.query(updateVoteSQLQuery(userId, postId, realValue));
+        // Double points to go from 1 to -1 instead of 0
+        await trans.query(updatePostPointsSQLQuery(postId, realValue * 2));
+      });
+    } else if (!updoot) {
+      // Never voted
+      // await getConnection().query(voteSQLQuery(userId, postId, realValue));
+      await getConnection().transaction(async trans => {
+        await trans.query(voteSQLQuery(userId, postId, realValue));
+        await trans.query(updatePostPointsSQLQuery(postId, realValue));
+      });
+    }
 
     return true;
   }

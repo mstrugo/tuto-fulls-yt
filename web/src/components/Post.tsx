@@ -1,14 +1,31 @@
-import React, { FC } from 'react';
-import { Box, Flex, Heading, IconButton, Text } from '@chakra-ui/core';
-import { Post as PostType } from 'generated/graphql';
+import React, { FC, useState } from 'react';
+import { Box, Flex, Heading, IconButton, Spinner, Text } from '@chakra-ui/core';
+import { PostSnippetFragment, useVoteMutation } from 'generated/graphql';
 
 interface PostProps {
-  data: Pick<PostType, 'points' | 'title' | 'creator' | 'textSnippet'>;
+  data: PostSnippetFragment;
 }
 
+type LoadingState = 'upvote' | 'downvote' | 'quiet';
+
 export const Post: FC<PostProps> = ({ data }) => {
-  const handleUpvote = () => console.log('upv');
-  const handleDownvote = () => console.log('downv');
+  const [fetchState, setFetchState] = useState<LoadingState>('quiet');
+  const [, vote] = useVoteMutation();
+
+  const handleUpvote = async () => {
+    setFetchState('upvote');
+    await vote({ postId: data.id, value: 1 });
+    setFetchState('quiet');
+  };
+
+  const handleDownvote = async () => {
+    setFetchState('downvote');
+    await vote({ postId: data.id, value: -1 });
+    setFetchState('quiet');
+  };
+
+  const alreadyUpvoted = data.voteStatus === 1;
+  const alreadyDownvoted = data.voteStatus === -1;
 
   return (
     <Flex p={5} shadow="md" borderWidth="1px">
@@ -18,6 +35,9 @@ export const Post: FC<PostProps> = ({ data }) => {
           size="md"
           aria-label="Upvote"
           onClick={handleUpvote}
+          isLoading={fetchState === 'upvote'}
+          variantColor={alreadyUpvoted ? 'green' : undefined}
+          isDisabled={alreadyUpvoted}
         />
         <Text>{data.points}</Text>
         <IconButton
@@ -25,6 +45,9 @@ export const Post: FC<PostProps> = ({ data }) => {
           size="md"
           aria-label="Downvote"
           onClick={handleDownvote}
+          isLoading={fetchState === 'downvote'}
+          variantColor={alreadyDownvoted ? 'red' : undefined}
+          isDisabled={alreadyDownvoted}
         />
       </Flex>
       <Box ml={4}>
