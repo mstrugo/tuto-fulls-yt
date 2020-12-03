@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text, Heading, Spinner } from '@chakra-ui/core';
+import { Box, Text, Heading, Spinner, IconButton, Flex } from '@chakra-ui/core';
 import { useRouter } from 'next/router';
 import { withUrqlClient } from 'next-urql';
 import Layout from 'components/Layout';
@@ -7,8 +7,9 @@ import { usePostQuery } from 'generated/graphql';
 import { createUrqlClient } from 'utils/createUrqlClient';
 import { __OUT_OF_RANGE__ } from '../../constants';
 import { parseDate } from 'utils/parseDate';
+import Actions from 'components/Actions';
 
-const Detail = () => {
+const Post = () => {
   const router = useRouter();
   const { id } = router.query;
   let postId = !!id && typeof id === 'string' ? parseInt(id) : __OUT_OF_RANGE__;
@@ -32,7 +33,10 @@ const Detail = () => {
 
   return (
     <Layout variant="small">
-      <Heading>{post.title}</Heading>
+      <Flex>
+        <Heading>{post.title}</Heading>
+        <Actions creatorId={post.creator.id} postId={post.id} size="xs" />
+      </Flex>
       <Text mb={4}>
         Posted by {post.creator.username} {parseDate(parseInt(post.createdAt))}
       </Text>
@@ -41,4 +45,4 @@ const Detail = () => {
   );
 };
 
-export default withUrqlClient(createUrqlClient, { ssr: true })(Detail);
+export default withUrqlClient(createUrqlClient, { ssr: true })(Post);

@@ -8,8 +8,10 @@ export const __INTERNAL_URL__ = {
   login: '/login',
   register: '/register',
   createPost: '/create-post',
-  postDetail: '/detail',
-  postDetailSlug: '/detail/[slug]',
+  editPost: '/post/edit',
+  editPostSlug: '/post/edit/[id]',
+  postDetail: '/post',
+  postDetailSlug: '/post/[id]',
 };
 
 export const __OUT_OF_RANGE__ = -1;

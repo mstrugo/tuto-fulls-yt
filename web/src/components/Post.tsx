@@ -1,13 +1,9 @@
 import React, { FC, useState } from 'react';
 import { Box, Flex, Heading, IconButton, Text } from '@chakra-ui/core';
-import {
-  PostSnippetFragment,
-  useDeletePostMutation,
-  useMeQuery,
-  useVoteMutation,
-} from 'generated/graphql';
+import { PostSnippetFragment, useVoteMutation } from 'generated/graphql';
 import Link from 'next/link';
 import { __INTERNAL_URL__ } from '../constants';
+import Actions from './Actions';
 
 interface PostProps {
   data: PostSnippetFragment;
@@ -18,8 +14,6 @@ type LoadingState = 'upvote' | 'downvote' | 'quiet';
 export const Post: FC<PostProps> = ({ data }) => {
   const [fetchState, setFetchState] = useState<LoadingState>('quiet');
   const [, vote] = useVoteMutation();
-  const [, deletePost] = useDeletePostMutation();
-  const [{ data: user }] = useMeQuery();
 
   const handleUpvote = async () => {
     setFetchState('upvote');
@@ -31,10 +25,6 @@ export const Post: FC<PostProps> = ({ data }) => {
     setFetchState('downvote');
     await vote({ postId: data.id, value: -1 });
     setFetchState('quiet');
-  };
-
-  const handleDelete = async () => {
-    deletePost({ id: data.id });
   };
 
   const alreadyUpvoted = data.voteStatus === 1;
@@ -78,15 +68,7 @@ export const Post: FC<PostProps> = ({ data }) => {
             {data.textSnippet}
           </Text>
 
-          {user?.me?.id === data.creator.id && (
-            <IconButton
-              aria-label="delete"
-              icon="delete"
-              onClick={handleDelete}
-            >
-              Delete
-            </IconButton>
-          )}
+          <Actions creatorId={data.creator.id} postId={data.id} />
         </Flex>
       </Box>
     </Flex>
