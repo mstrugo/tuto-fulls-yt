@@ -85,11 +85,20 @@ function updQuery<Result, Query>(
   return cache.updateQuery(qi, data => fn(result, data as any) as any);
 }
 
+function invalidateAllPosts(cache: Cache) {
+  const allFields = cache.inspectFields('Query');
+  const fieldInfos = allFields.filter(info => info.fieldName === 'posts');
+
+  fieldInfos.forEach(fi => {
+    cache.invalidate('Query', 'posts', fi.arguments || {});
+  });
+}
+
 export const createUrqlClient = (ssrExchange: any, ctx: any) => ({
   url: __GRAPHQL_URL__,
   fetchOptions: {
     credentials: 'include' as const,
-    headers: isSSR() ? { cookie: ctx.req.headers.cookie } : undefined,
+    headers: isSSR() ? { cookie: ctx?.req?.headers?.cookie } : undefined,
   },
   exchanges: [
     dedupExchange,
@@ -119,6 +128,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => ({
                 };
               },
             );
+            invalidateAllPosts(cache);
           },
           register: (result, _args, cache, _info) => {
             updQuery<RegisterMutation, MeQuery>(
@@ -145,14 +155,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => ({
             );
           },
           createPost: (_result, _args, cache, _info) => {
-            const allFields = cache.inspectFields('Query');
-            const fieldInfos = allFields.filter(
-              info => info.fieldName === 'posts',
-            );
-
-            fieldInfos.forEach(fi => {
-              cache.invalidate('Query', 'posts', fi.arguments || {});
-            });
+            invalidateAllPosts(cache);
           },
           vote: (_result, args, cache, _info) => {
             const { postId, value } = args as VoteMutationVariables;

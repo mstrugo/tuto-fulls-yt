@@ -8,16 +8,10 @@ import { createUrqlClient } from 'utils/createUrqlClient';
 import { __OUT_OF_RANGE__ } from '../../constants';
 import { parseDate } from 'utils/parseDate';
 import Actions from 'components/Actions';
+import { useGetPostFromUrl } from 'utils/useGetPostFromUrl';
 
 const Post = () => {
-  const router = useRouter();
-  const { id } = router.query;
-  let postId = !!id && typeof id === 'string' ? parseInt(id) : __OUT_OF_RANGE__;
-
-  const [{ data, fetching }] = usePostQuery({
-    pause: postId === __OUT_OF_RANGE__,
-    variables: { id: postId },
-  });
+  const [{ data, fetching }] = useGetPostFromUrl();
 
   if (fetching) {
     return (

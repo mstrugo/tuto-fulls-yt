@@ -4,15 +4,22 @@ import NextLink from 'next/link';
 import { __INTERNAL_URL__ } from '../constants';
 import { useLogoutMutation, useMeQuery } from 'generated/graphql';
 import { isSSR } from 'utils/isSSR';
+import { useRouter } from 'next/router';
 
 interface NavBarProps {}
 
 export const NavBar: FC<NavBarProps> = () => {
+  const router = useRouter();
   const [{ data, fetching }] = useMeQuery({
     // Don't call this query if this component is rendering from ServerSide
     pause: isSSR(),
   });
   const [{ fetching: isLogginOut }, logout] = useLogoutMutation();
+
+  const logoutHandler = async () => {
+    await logout();
+    router.reload();
+  };
 
   let body = null;
 
@@ -43,7 +50,7 @@ export const NavBar: FC<NavBarProps> = () => {
           </Link>
         </NextLink>
         <Box mr={2}>{data?.me.username}</Box>
-        <Button onClick={() => logout()} isLoading={isLogginOut}>
+        <Button onClick={logoutHandler} isLoading={isLogginOut}>
           Logout
         </Button>
       </Flex>

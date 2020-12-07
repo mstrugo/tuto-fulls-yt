@@ -15,7 +15,7 @@ import {
 } from 'type-graphql';
 import { isAuth } from '../middleware/isAuth';
 import { MyContext } from '../types/context';
-import { Post, Updoot } from '../entities';
+import { Post, Updoot, User } from '../entities';
 import {
   postsSQLQuery,
   updatePostPointsSQLQuery,
@@ -53,13 +53,33 @@ export class PostResolver {
     return root.text;
   }
 
+  @FieldResolver(() => User)
+  creator(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
+    return userLoader.load(post.creatorId);
+  }
+
+  @FieldResolver(() => Int, { nullable: true })
+  async voteStatus(
+    @Root() post: Post,
+    @Ctx() { updootLoader, req }: MyContext,
+  ) {
+    if (!req.session.userId) {
+      return null;
+    }
+
+    const updoot = await updootLoader.load({
+      postId: post.id,
+      userId: req.session.userId,
+    });
+
+    return !!updoot ? updoot.value : null;
+  }
+
   @Query(() => PaginatedPosts)
   async posts(
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor: string | null,
-    @Ctx() { req }: MyContext,
   ): Promise<PaginatedPosts> {
-    const { userId } = req.session;
     const realLimit = Math.min(50, limit);
     const moreThanLimit = realLimit + 1;
 
@@ -69,7 +89,7 @@ export class PostResolver {
     }
 
     const posts = await getConnection().query(
-      postsSQLQuery(moreThanLimit, cursorVal, userId),
+      postsSQLQuery(moreThanLimit, cursorVal),
     );
 
     // const query = getConnection()
@@ -95,7 +115,8 @@ export class PostResolver {
 
   @Query(() => Post, { nullable: true })
   post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
-    return Post.findOne(id, { relations: ['creator'] });
+    // return Post.findOne(id, { relations: ['creator'] });
+    return Post.findOne(id);
   }
 
   @Mutation(() => Post)
