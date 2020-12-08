@@ -1,4 +1,4 @@
-import { UsernamePasswordInput } from '../types/UsernamePasswordInput';
+import { UsernamePasswordInput } from '../types';
 
 export const validateEmptyPassword = (field: string, value: string) => {
   if (!value) {

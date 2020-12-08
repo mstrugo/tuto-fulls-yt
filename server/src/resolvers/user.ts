@@ -13,15 +13,14 @@ import argon2 from 'argon2';
 import { getConnection } from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
 import { User } from '../entities';
-import { MyContext } from '../types/context';
+import { MyContext, UsernamePasswordInput } from '../types';
 import {
   __COOKIE_NAME__,
   __FRONTEND_RECOVERY_PSW__,
-  ___FORGET_PREFIX__,
+  __FORGET_PREFIX__,
 } from '../constants';
 import { validateEmptyPassword, validateRegister } from '../utils/validations';
 import { sendEmail } from '../utils/sendEmail';
-import { UsernamePasswordInput } from '../types/UsernamePasswordInput';
 
 @ObjectType()
 class FieldError {
@@ -180,7 +179,7 @@ export class UserResolver {
 
     const token = uuid4();
     await redis.set(
-      ___FORGET_PREFIX__ + token,
+      __FORGET_PREFIX__ + token,
       user.id,
       'ex',
       1000 * 3600 * 72,
@@ -209,7 +208,7 @@ export class UserResolver {
       };
     }
 
-    const redisKey = ___FORGET_PREFIX__ + token;
+    const redisKey = __FORGET_PREFIX__ + token;
     const userId = await redis.get(redisKey);
     if (!userId) {
       return {

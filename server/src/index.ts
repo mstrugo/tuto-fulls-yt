@@ -7,7 +7,14 @@ import Redis from 'ioredis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import cors from 'cors';
-import { __COOKIE_NAME__, __FRONTEND_APP__, __PROD__ } from './constants';
+import {
+  __COOKIE_NAME__,
+  __ENV_BACKEND_PORT__,
+  __ENV_FRONTEND_APP__,
+  __ENV_REDIS_URL__,
+  __ENV_SESSION_SECRET__,
+  __PROD__,
+} from './constants';
 import { typeormConfig } from './typeorm.config';
 import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
@@ -19,16 +26,16 @@ import { createUpdootLoader } from './utils/createUpdootLoader';
 const main = async () => {
   const conn = await createConnection(typeormConfig);
   // Post.delete({});
-  // await conn.runMigrations();
+  await conn.runMigrations();
 
   const app = express();
 
   const RedisStore = connectRedis(session);
-  const redis = new Redis();
-
+  const redis = new Redis(__ENV_REDIS_URL__);
+  app.set('proxy', 1); // For NGIN-X
   app.use(
     cors({
-      origin: __FRONTEND_APP__,
+      origin: __ENV_FRONTEND_APP__,
       credentials: true,
     }),
   );
@@ -45,9 +52,10 @@ const main = async () => {
         httpOnly: true,
         sameSite: 'lax',
         secure: __PROD__, // cookie only works in https
+        domain: __PROD__ ? '.example.com' : undefined,
       },
       saveUninitialized: false,
-      secret: 'cangrejitacangrejit',
+      secret: __ENV_SESSION_SECRET__,
       resave: false,
     }),
   );
@@ -71,8 +79,8 @@ const main = async () => {
     cors: false,
   });
 
-  app.listen(4000, () => {
-    console.log('server localhost:4000');
+  app.listen(parseInt(__ENV_BACKEND_PORT__), () => {
+    console.log(`server localhost: ${__ENV_BACKEND_PORT__}`);
   });
 };
 

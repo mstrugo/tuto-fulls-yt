@@ -14,7 +14,7 @@ import {
   UseMiddleware,
 } from 'type-graphql';
 import { isAuth } from '../middleware/isAuth';
-import { MyContext } from '../types/context';
+import { MyContext } from '../types';
 import { Post, Updoot, User } from '../entities';
 import {
   postsSQLQuery,

@@ -1,9 +1,9 @@
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class FakePosts1606855274919 implements MigrationInterface {
-
-    public async up(queryRunner: QueryRunner): Promise<void> {
-      queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    queryRunner.query(`
+    /*
         insert into post (title, text, "creatorId", "createdAt") values ('The Kiss of Her Flesh', 'Donec diam neque, vestibulum eget, vulputate ut, ultrices vel, augue. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Donec pharetra, magna vestibulum aliquet ultrices, erat tortor sollicitudin mi, sit amet lobortis sapien sapien non mi. Integer ac neque.
 
         Duis bibendum. Morbi non quam nec dui luctus rutrum. Nulla tellus.
@@ -304,10 +304,9 @@ export class FakePosts1606855274919 implements MigrationInterface {
         Proin eu mi. Nulla ac enim. In tempor, turpis nec euismod scelerisque, quam turpis adipiscing lorem, vitae mattis nibh ligula nec sem.
 
         Duis aliquam convallis nunc. Proin at turpis a pede posuere nonummy. Integer non velit.', 1, '2020-11-01T04:53:42Z');
-      `)
-    }
+    */
+      `);
+  }
 
-    public async down(_: QueryRunner): Promise<void> {
-    }
-
+  public async down(_: QueryRunner): Promise<void> {}
 }
