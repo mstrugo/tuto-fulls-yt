@@ -24,15 +24,15 @@ import { createUpdootLoader } from './utils/createUpdootLoader';
 // import { Post } from './entities';
 
 const main = async () => {
-  const conn = await createConnection(typeormConfig);
+  await createConnection(typeormConfig);
   // Post.delete({});
-  await conn.runMigrations();
+  // await conn.runMigrations();
 
   const app = express();
 
   const RedisStore = connectRedis(session);
   const redis = new Redis(__ENV_REDIS_URL__);
-  app.set('proxy', 1); // For NGIN-X
+  app.set('trust proxy', 1); // For NGIN-X
   app.use(
     cors({
       origin: __ENV_FRONTEND_APP__,

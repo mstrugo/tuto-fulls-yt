@@ -1,9 +1,7 @@
 import React from 'react';
-import { Box, Text, Heading, Spinner, IconButton, Flex } from '@chakra-ui/core';
-import { useRouter } from 'next/router';
+import { Box, Text, Heading, Spinner, Flex } from '@chakra-ui/core';
 import { withUrqlClient } from 'next-urql';
 import Layout from 'components/Layout';
-import { usePostQuery } from 'generated/graphql';
 import { createUrqlClient } from 'utils/createUrqlClient';
 import { __OUT_OF_RANGE__ } from '../../constants';
 import { parseDate } from 'utils/parseDate';

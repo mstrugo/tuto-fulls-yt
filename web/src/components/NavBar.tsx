@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, ReactElement } from 'react';
 import { Box, Button, Flex, Heading, Link, Spinner } from '@chakra-ui/core';
 import NextLink from 'next/link';
 import { __INTERNAL_URL__ } from '../constants';
@@ -7,6 +7,8 @@ import { isSSR } from 'utils/isSSR';
 import { useRouter } from 'next/router';
 
 interface NavBarProps {}
+
+type BodyContent = ReactElement | null;
 
 export const NavBar: FC<NavBarProps> = () => {
   const router = useRouter();
@@ -21,7 +23,7 @@ export const NavBar: FC<NavBarProps> = () => {
     router.reload();
   };
 
-  let body = null;
+  let body: BodyContent = null;
 
   if (!!fetching) {
     // data is loading
