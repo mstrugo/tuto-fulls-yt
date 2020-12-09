@@ -6,16 +6,15 @@ import { useRouter } from 'next/router';
 import NextLink from 'next/link';
 import Wrapper from 'components/Wrapper';
 import InputField from 'components/InputField';
-import { useChangePasswordMutation } from 'generated/graphql';
+import { MeDocument, MeQuery, useChangePasswordMutation } from 'generated/graphql';
 import { toErrorMap } from 'utils/errorMap';
-import { withUrqlClient } from 'next-urql';
-import { createUrqlClient } from 'utils/createUrqlClient';
+import { withApollo } from 'utils/withApollo';
 
 const ChangePassword: NextPage = () => {
   const [tokenError, setTokenError] = useState('');
   const router = useRouter();
   const token = (router.query.token as string) ?? '';
-  const [, changePassword] = useChangePasswordMutation();
+  const [changePassword] = useChangePasswordMutation();
 
   return (
     <Wrapper variant="small">
@@ -23,8 +22,19 @@ const ChangePassword: NextPage = () => {
         initialValues={{ newPassword: '' }}
         onSubmit={async (val, { setErrors }) => {
           const res = await changePassword({
-            token,
-            newPassword: val.newPassword,
+            variables: {
+              token,
+              newPassword: val.newPassword,
+            },
+            update: (cache, { data }) => {
+              cache.writeQuery<MeQuery>({
+                query: MeDocument,
+                data: {
+                  __typename: 'Query',
+                  me: data?.changePassword.user,
+                },
+              });
+            }
           });
 
           if (res.data?.changePassword.errors) {
@@ -69,5 +79,4 @@ const ChangePassword: NextPage = () => {
   );
 };
 
-// @ts-ignore
-export default withUrqlClient(createUrqlClient)(ChangePassword);
+export default withApollo({ ssr: false })(ChangePassword);

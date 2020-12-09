@@ -1,5 +1,5 @@
 # tuto-fulls-yt
-  - https://youtu.be/I6ypD7qv3Z8?t=44501
+  - https://youtu.be/I6ypD7qv3Z8
   - https://github.com/benawad/lireddit
 
 ## Install

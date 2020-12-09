@@ -4,28 +4,28 @@ import NextLink from 'next/link';
 import { __INTERNAL_URL__ } from '../constants';
 import { useLogoutMutation, useMeQuery } from 'generated/graphql';
 import { isSSR } from 'utils/isSSR';
-import { useRouter } from 'next/router';
+import { useApolloClient } from '@apollo/client';
 
 interface NavBarProps {}
 
 type BodyContent = ReactElement | null;
 
 export const NavBar: FC<NavBarProps> = () => {
-  const router = useRouter();
-  const [{ data, fetching }] = useMeQuery({
+  const { data, loading } = useMeQuery({
     // Don't call this query if this component is rendering from ServerSide
-    pause: isSSR(),
+    skip: isSSR(),
   });
-  const [{ fetching: isLogginOut }, logout] = useLogoutMutation();
+  const [logout, { loading: isLogginOut }] = useLogoutMutation();
+  const apolloClient = useApolloClient();
 
   const logoutHandler = async () => {
     await logout();
-    router.reload();
+    await apolloClient.resetStore();
   };
 
   let body: BodyContent = null;
 
-  if (!!fetching) {
+  if (!!loading) {
     // data is loading
     body = <Spinner />;
   } else if (!data?.me) {

@@ -1,9 +1,16 @@
 import React, { FC, useState } from 'react';
 import { Box, Flex, Heading, IconButton, Text } from '@chakra-ui/core';
-import { PostSnippetFragment, useVoteMutation } from 'generated/graphql';
+import {
+  PostSnippetFragment,
+  useMeQuery,
+  useVoteMutation,
+  VoteMutation,
+} from 'generated/graphql';
 import Link from 'next/link';
 import { __INTERNAL_URL__ } from '../constants';
 import Actions from './Actions';
+import gql from 'graphql-tag';
+import { ApolloCache } from '@apollo/client';
 
 interface PostProps {
   data: PostSnippetFragment;
@@ -11,22 +18,79 @@ interface PostProps {
 
 type LoadingState = 'upvote' | 'downvote' | 'quiet';
 
+interface VoteFragment {
+  id: PostSnippetFragment['id'];
+  points: PostSnippetFragment['points'];
+  voteStatus: PostSnippetFragment['voteStatus'];
+}
+
+const updateVote = (
+  id: number,
+  value: number,
+  cache: ApolloCache<VoteMutation>,
+) => {
+  const postId = `Post:${id}`;
+
+  const data = cache.readFragment<VoteFragment>({
+    id: postId,
+    fragment: gql`
+      fragment _ on Post {
+        id
+        points
+        voteStatus
+      }
+    `,
+  });
+
+  if (!!data) {
+    if (data.voteStatus === value) {
+      return;
+    }
+
+    const multiplier = data.voteStatus ? 2 : 1;
+    const newPoints = data.points + value * multiplier;
+
+    cache.writeFragment<VoteFragment>({
+      id: postId,
+      fragment: gql`
+        fragment __ on Post {
+          points
+          voteStatus
+        }
+      `,
+      data: {
+        id,
+        points: newPoints,
+        voteStatus: value,
+      },
+    });
+  }
+};
+
 export const Post: FC<PostProps> = ({ data }) => {
   const [fetchState, setFetchState] = useState<LoadingState>('quiet');
-  const [, vote] = useVoteMutation();
+  const [vote] = useVoteMutation();
+  const { data: user } = useMeQuery();
 
   const handleUpvote = async () => {
     setFetchState('upvote');
-    await vote({ postId: data.id, value: 1 });
+    await vote({
+      variables: { postId: data.id, value: 1 },
+      update: cache => updateVote(data.id, 1, cache),
+    });
     setFetchState('quiet');
   };
 
   const handleDownvote = async () => {
     setFetchState('downvote');
-    await vote({ postId: data.id, value: -1 });
+    await vote({
+      variables: { postId: data.id, value: -1 },
+      update: cache => updateVote(data.id, -1, cache),
+    });
     setFetchState('quiet');
   };
 
+  const notLoggedIn = !user?.me?.id;
   const alreadyUpvoted = data.voteStatus === 1;
   const alreadyDownvoted = data.voteStatus === -1;
 
@@ -40,7 +104,7 @@ export const Post: FC<PostProps> = ({ data }) => {
           onClick={handleUpvote}
           isLoading={fetchState === 'upvote'}
           variantColor={alreadyUpvoted ? 'green' : undefined}
-          isDisabled={alreadyUpvoted}
+          isDisabled={notLoggedIn || alreadyUpvoted}
         />
         <Text>{data.points}</Text>
         <IconButton
@@ -50,7 +114,7 @@ export const Post: FC<PostProps> = ({ data }) => {
           onClick={handleDownvote}
           isLoading={fetchState === 'downvote'}
           variantColor={alreadyDownvoted ? 'red' : undefined}
-          isDisabled={alreadyDownvoted}
+          isDisabled={notLoggedIn || alreadyDownvoted}
         />
       </Flex>
       <Box ml={4} flex={1}>

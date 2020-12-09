@@ -11,7 +11,7 @@ export const useGetPostFromUrl = () => {
   const shouldStop = postId === __OUT_OF_RANGE__;
 
   return usePostQuery({
-    pause: shouldStop,
+    skip: shouldStop,
     variables: { id: postId },
   });
 };

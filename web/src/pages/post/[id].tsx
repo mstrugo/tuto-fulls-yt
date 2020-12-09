@@ -1,17 +1,16 @@
 import React from 'react';
 import { Box, Text, Heading, Spinner, Flex } from '@chakra-ui/core';
-import { withUrqlClient } from 'next-urql';
 import Layout from 'components/Layout';
-import { createUrqlClient } from 'utils/createUrqlClient';
 import { __OUT_OF_RANGE__ } from '../../constants';
 import { parseDate } from 'utils/parseDate';
+import { withApollo } from 'utils/withApollo';
 import Actions from 'components/Actions';
 import { useGetPostFromUrl } from 'utils/useGetPostFromUrl';
 
 const Post = () => {
-  const [{ data, fetching }] = useGetPostFromUrl();
+  const { data, loading } = useGetPostFromUrl();
 
-  if (fetching) {
+  if (loading) {
     return (
       <Layout variant="small">
         <Spinner />
@@ -37,4 +36,4 @@ const Post = () => {
   );
 };
 
-export default withUrqlClient(createUrqlClient, { ssr: true })(Post);
+export default withApollo({ ssr: true })(Post);

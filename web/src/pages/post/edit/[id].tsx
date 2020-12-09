@@ -2,20 +2,19 @@ import React from 'react';
 import { Formik, Form } from 'formik';
 import { Box, Spinner, Button } from '@chakra-ui/core';
 import { useRouter } from 'next/router';
-import { withUrqlClient } from 'next-urql';
 import Layout from 'components/Layout';
 import { useUpdatePostMutation } from 'generated/graphql';
-import { createUrqlClient } from 'utils/createUrqlClient';
 import InputField from 'components/InputField';
 import { __INTERNAL_URL__, __OUT_OF_RANGE__ } from '../../../constants';
 import { useGetPostFromUrl } from 'utils/useGetPostFromUrl';
+import { withApollo } from 'utils/withApollo';
 
 const EditPost = () => {
   const router = useRouter();
-  const [{ data, fetching }] = useGetPostFromUrl();
-  const [, updatePost] = useUpdatePostMutation();
+  const { data, loading } = useGetPostFromUrl();
+  const [updatePost] = useUpdatePostMutation();
 
-  if (fetching) {
+  if (loading) {
     return (
       <Layout variant="small">
         <Spinner />
@@ -32,7 +31,7 @@ const EditPost = () => {
       <Formik
         initialValues={{ title: data.post.title, text: data.post.text }}
         onSubmit={async vals => {
-          await updatePost({ id: data.post!.id, ...vals });
+          await updatePost({ variables: { id: data.post!.id, ...vals } });
 
           router.back();
         }}
@@ -67,4 +66,4 @@ const EditPost = () => {
   );
 };
 
-export default withUrqlClient(createUrqlClient)(EditPost);
+export default withApollo({ ssr: false })(EditPost);

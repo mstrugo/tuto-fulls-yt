@@ -11,11 +11,19 @@ interface ActionsProps {
 }
 
 const Actions = ({ creatorId, postId, size = 'md' }: ActionsProps) => {
-  const [, deletePost] = useDeletePostMutation();
-  const [{ data: user }] = useMeQuery();
+  const [deletePost] = useDeletePostMutation();
+  const { data: user } = useMeQuery();
 
   const handleDelete = async () => {
-    deletePost({ id: postId });
+    await deletePost({
+      variables: {
+        id: postId,
+      },
+      update: cache => {
+        // Post:77
+        cache.evict({ id: `Post:${postId}` });
+      },
+    });
   };
 
   if (user?.me?.id !== creatorId) {
