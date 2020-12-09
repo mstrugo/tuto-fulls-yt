@@ -6,7 +6,11 @@ import { useRouter } from 'next/router';
 import NextLink from 'next/link';
 import Wrapper from 'components/Wrapper';
 import InputField from 'components/InputField';
-import { MeDocument, MeQuery, useChangePasswordMutation } from 'generated/graphql';
+import {
+  MeDocument,
+  MeQuery,
+  useChangePasswordMutation,
+} from 'generated/graphql';
 import { toErrorMap } from 'utils/errorMap';
 import { withApollo } from 'utils/withApollo';
 
@@ -34,7 +38,7 @@ const ChangePassword: NextPage = () => {
                   me: data?.changePassword.user,
                 },
               });
-            }
+            },
           });
 
           if (res.data?.changePassword.errors) {

@@ -178,12 +178,7 @@ export class UserResolver {
     }
 
     const token = uuid4();
-    await redis.set(
-      __FORGET_PREFIX__ + token,
-      user.id,
-      'ex',
-      1000 * 3600 * 72,
-    ); // 3 days
+    await redis.set(__FORGET_PREFIX__ + token, user.id, 'ex', 1000 * 3600 * 72); // 3 days
 
     await sendEmail(
       email,
